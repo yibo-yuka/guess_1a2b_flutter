@@ -32,7 +32,51 @@
   <title>guess_1a2b</title>
   <link rel="manifest" href="manifest.json">
 </head>
-<body>
-  <script src="flutter_bootstrap.js" async></script>
+<body style="background-color: #f3f3f3;">
+  <div id="loading-indicator" class="container">
+    <div class="spinner"></div>
+    <p style="font-family: sans-serif; color: #555;">正在準備 1A2B 遊戲...</p>
+  </div>
+
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #ccc;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <script>
+    window.addEventListener('load', function(ev) {
+      // 下載 flutter 引擎腳本
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            // 當引擎準備好後，移除 loading 動畫並跑起 App
+            document.getElementById('loading-indicator').remove();
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
