@@ -61,21 +61,14 @@
     }
   </style>
 
+  <script src="flutter_bootstrap.js" async></script>
+
   <script>
-    window.addEventListener('load', function(ev) {
-      // 下載 flutter 引擎腳本
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            // 當引擎準備好後，移除 loading 動畫並跑起 App
-            document.getElementById('loading-indicator').remove();
-            appRunner.runApp();
-          });
-        }
-      });
+    window.addEventListener('flutter-first-frame', function () {
+      var indicator = document.getElementById('loading-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
     });
   </script>
 </body>
