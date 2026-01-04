@@ -27,10 +27,11 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   final TextEditingController _controller = TextEditingController();
   final List<String> _history = [];
+
+  // 1. 定義一個 FocusNode
+  final FocusNode _focusNode = FocusNode();
   late String _answer;
   bool _isGameOver = false;
-
-  // 2. 計時器相關變數
   Timer? _timer;
   int _seconds = 0;
 
@@ -99,6 +100,8 @@ class _GamePageState extends State<GamePage> {
         _stopTimer(); // 4. 猜對後停止計時
       }
       _controller.clear();
+      // 2. 核心：在送出並清空後，重新請求聚焦
+      _focusNode.requestFocus();
     });
   }
 
@@ -109,6 +112,7 @@ class _GamePageState extends State<GamePage> {
   @override
   void dispose() {
     _timer?.cancel(); // 5. 頁面銷毀時釋放計時器資源，防止記憶體洩漏
+    _focusNode.dispose(); // 記得要釋放 FocusNode 資源
     super.dispose();
   }
 
@@ -144,6 +148,8 @@ class _GamePageState extends State<GamePage> {
               ),
             TextField(
               controller: _controller,
+              focusNode: _focusNode, // 3. 將 FocusNode 綁定到 TextField
+              autofocus: true,       // 進入頁面時自動聚焦
               decoration: const InputDecoration(
                 labelText: '輸入 4 個不重複數字',
                 hintText: '例如: 1234',
