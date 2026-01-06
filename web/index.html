@@ -37,7 +37,13 @@
     <div class="spinner"></div>
     <p style="font-family: sans-serif; color: #555;">正在準備 1A2B 遊戲...</p>
   </div>
-
+  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // 監聽第一幀渲染完成後移除動畫
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('loading-indicator').remove();
+    });
+  </script>
   <style>
     .container {
       display: flex;
