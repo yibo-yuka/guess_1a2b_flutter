@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // 這裡應該是為了同時維持計時器功能跟頁面狀態更新功能
+import 'dart:async';
 
 void main() => runApp(const GuessGameApp());
 
@@ -10,300 +10,323 @@ class GuessGameApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.indigo, useMaterial3: true),
-      home: const GamePage(),
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+      ),
+      home: const MenuPage(), // 對應圖 1：開始畫面
     );
   }
 }
 
+// --- 畫面一：開始畫面 (Menu) ---
+class MenuPage extends StatelessWidget {
+  const MenuPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("1A2B", style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.indigo)),
+            const SizedBox(height: 40),
+            Container(
+              width: 250,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.indigo, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text("Menu", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const Divider(),
+                  _menuButton(context, '標準 1A2B', '1A2B'),
+                  _menuButton(context, '1A2B+ (5碼)', '1A2B+'),
+                  _menuButton(context, '16進位模式', '16進位'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _menuButton(BuildContext context, String label, String mode) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RulePage(mode: mode))),
+          child: Text(label),
+        ),
+      ),
+    );
+  }
+}
+
+// --- 畫面二：遊戲說明 (Rule Page) ---
+class RulePage extends StatelessWidget {
+  final String mode;
+  const RulePage({super.key, required this.mode});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Container(
+          width: 300,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("rule", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              Text(
+                mode == '16進位' 
+                    ? "猜測 6 個不重複字元 (0-9, A-F)。\nA: 位置與數字皆對\nB: 數字對但位置錯"
+                    : "猜測 ${mode == '1A2B+' ? '5' : '4'} 個不重複數字。\nA: 位置與數字皆對\nB: 數字對但位置錯",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GamePage(mode: mode))),
+                child: const Text("Start"), // 對應圖 2 的 Start 按鈕
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- 畫面三：遊戲開始 (Game Play) ---
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  final String mode;
+  const GamePage({super.key, required this.mode});
 
   @override
   State<GamePage> createState() => _GamePageState();
 }
 
 class _GamePageState extends State<GamePage> {
-  final TextEditingController _controller = TextEditingController();
   final List<String> _history = [];
-
-  // 這是為了要在輸入答案後讓鼠標自動回到輸入框(聚焦)
-  final FocusNode _focusNode = FocusNode();
+  final TextEditingController _controller = TextEditingController();
   late String _answer;
   bool _isGameOver = false;
   Timer? _timer;
   int _seconds = 0;
-  
-  // 新增模式追蹤，預設為 '1A2B'，主要由側邊欄DRAWER控制
-  String _currentMode = '1A2B';
-  // 切換模式的函式
-  void _selectMode(String mode) { // 這裡應該會透過側邊欄觸發
-    setState(() {
-      _currentMode = mode;
-      _generateNewGame(); // 切換模式時自動重置遊戲
-    });
-    Navigator.pop(context); // 核心：選完後自動關閉側邊欄
-  }
-  
+
   @override
   void initState() {
     super.initState();
-    _generateNewGame();
+    _generateNewGame(); // 初始化遊戲與計時器
   }
 
-  // 啟動計時器
-  void _startTimer() {
-    _timer?.cancel(); // 確保不會有重複的計時器
-    _seconds = 0;
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _seconds++;
-      });
-    });
-  }
+  int get _codeLength => widget.mode == '1A2B+' ? 5 : (widget.mode == '16進位' ? 6 : 4);
 
-  // 停止計時器
-  void _stopTimer() {
-    _timer?.cancel();
-  }
-
-  // 將秒數轉換為 mm:ss 格式
-  String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  int get _codeLength {
-    switch (_currentMode) {
-      case '1A2B+': return 5;
-      case '16進位': return 6;
-      default: return 4;
-    }
-  }
   void _generateNewGame() {
+    List<String> pool = List.generate(10, (i) => i.toString());
+    if (widget.mode == '16進位') pool.addAll(['A', 'B', 'C', 'D', 'E', 'F']);
+    pool.shuffle();
+    _answer = pool.sublist(0, _codeLength).join();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) => setState(() => _seconds++));
+  }
+  
+  void _resetGame() {
     setState(() {
-      // 建立候選池：如果是 16 進位模式，加入 A-F
-      List<String> pool = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-      if (_currentMode == '16進位') {
-        pool.addAll(['A', 'B', 'C', 'D', 'E', 'F']);
-      }
-      pool.shuffle();
-      _answer = pool.sublist(0, _codeLength).join();
-      _seconds = 0;
       _history.clear();
-      _isGameOver = false;
       _controller.clear();
-      _startTimer(); // 重新開始時重置計時器
+      _isGameOver = false;
+      _generateNewGame(); // 這會重置答案與計時器
     });
+    // 確保隱藏橫幅
+    ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
   }
 
   void _checkGuess() {
     String guess = _controller.text;
-    int requiredLength = _codeLength;
-    if (guess.length != requiredLength) {
-      _showError("請輸入 $requiredLength 位數字");
-      return;
-    }
-    // 檢查是否有重複數字
-    // .split('') 將字串轉為字元清單，.toSet() 會自動過濾掉重複項
-    if (guess.split('').toSet().length != guess.length) {
-      _showError("數字不能重複，請重新輸入");
-      _controller.clear(); // 清空讓玩家重打
-      _focusNode.requestFocus();
-      return;
-    }
-    int a = 0;
-    int b = 0;
-    int c = 0;
+    int a = 0, b = 0;
     for (int i = 0; i < guess.length; i++) {
-      if (guess[i] == _answer[i]) {
-        a++;
-      } else if (_answer.contains(guess[i])) {
-        b++;
-      }
+      if (guess[i] == _answer[i]) a++;
+      else if (_answer.contains(guess[i])) b++;
     }
-    // 計算 C (猜測的數字中，不在答案裡的個數)
-    // 邏輯：總長度 - (A + B)
-    c = guess.length - (a + b);
+
     setState(() {
-      String resultText;
-      switch (_currentMode) {
-        case '1A2B':
-          resultText = "$guess => ${a}A${b}B ";
-          break;
-        case '1A2B+':
-          resultText = "$guess => ${a}A${b}B${c}C ";
-          break;
-        case '1A2B3C':
-          resultText = "$guess => ${a}A${b}B${c}C ";
-          break;
-        case '16進位':
-          resultText = "$guess => ${a}A${b}B ";
-          break;
-        default:
-          resultText = "$guess => ${a}A${b}B";
-      }
-      // String result = "$guess => ${a}A${b}B (${_formatTime(_seconds)})";
-      _history.insert(0, "$resultText(${_formatTime(_seconds)})");
-      if (a == requiredLength) {
+      _history.insert(0, "$guess => ${a}A${b}B (${_formatTime(_seconds)})");
+      if (a == _codeLength) {
         _isGameOver = true;
-        _stopTimer(); // 猜對後停止計時
+        _timer?.cancel();
+        // 顯示猜對橫幅 (SnackBar)
+        ScaffoldMessenger.of(context).showMaterialBanner(
+          MaterialBanner(
+            content: Text("恭喜猜對！總耗時：${_formatTime(_seconds)}",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            backgroundColor: Colors.green[50],
+            leading: const Icon(Icons.emoji_events, color: Colors.orange, size: 40),
+            actions: [
+              TextButton(
+                onPressed: _resetGame, // 重新開始
+                child: const Text("重新開始", style: TextStyle(color: Colors.green)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                child: const Text("回主選單"),
+              ),
+            ],
+          ),
+        );
       }
       _controller.clear();
-      // 在送出並清空輸入框後，重新請求將鼠標聚焦到輸入框
-      _focusNode.requestFocus();
     });
   }
 
-  // 數字按鈕的處理函式
-  void _onNumberPress(String char) {
-    if (_isGameOver) return;
-    if (_controller.text.length < _codeLength) {
-      setState(() {
-        _controller.text += char;
-      });
-    }
-  }
-  // 刪除按鈕的處理函式
-  void _onDelete() {
-    if (_controller.text.isNotEmpty) {
-      setState(() {
-        _controller.text = _controller.text.substring(0, _controller.text.length - 1);
-      });
-    }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
+  String _formatTime(int s) => '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
 
   @override
   void dispose() {
-    _timer?.cancel(); // 頁面銷毀時釋放計時器資源，防止記憶體洩漏
-    _focusNode.dispose(); // 記得要釋放 FocusNode 資源
+    _timer?.cancel();
+    _controller.dispose();
+    // 當頁面關閉時，確保橫幅跟著消失
+    // 使用指令：ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+    // 或者 hideCurrentMaterialBanner()
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearMaterialBanners();
+      }
+    });
     super.dispose();
-  }
-
-  Widget _buildKeyboard() {
-    // 定義所有可能的字元
-    List<String> keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-    if (_currentMode == '16進位') {
-      keys.addAll(['A', 'B', 'C', 'D', 'E', 'F']);
-    }
-
-    return Container(
-      color: Colors.grey[200],
-      child: SafeArea(
-        top: false,
-        child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // 讓 Column 只佔用必要的高度
-          children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: keys.map((key) {
-                bool isUsed = _controller.text.contains(key);
-                return SizedBox(
-                  width: 50,
-                  height: 45,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isUsed ? Colors.grey : Colors.white,
-                      padding: EdgeInsets.zero,
-                    ),
-                    onPressed: isUsed ? null : () => _onNumberPress(key),
-                    child: Text(key),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(icon: const Icon(Icons.backspace), onPressed: _onDelete),
-                ElevatedButton(
-                  onPressed: _controller.text.length == _codeLength ? _checkGuess : null,
-                  child: const Text("確認送出"),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$_currentMode 挑戰'),
+        title: Text(widget.mode),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 離開前先清空橫幅，避免帶回首頁
+            ScaffoldMessenger.of(context).clearMaterialBanners();
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.all(16), 
-            child: Center(child: Text(_formatTime(_seconds)))
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16), 
+              child: Text(_formatTime(_seconds))
+            )
           )
         ],
       ),
-      // 實作側邊欄
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(decoration: BoxDecoration(color: Colors.indigo), child: Text('遊戲模式', style: TextStyle(color: Colors.white, fontSize: 24))),
-            ListTile(title: const Text('標準 1A2B'), onTap: () => _selectMode('1A2B')),
-            ListTile(title: const Text('1A2B+ (5碼)'), onTap: () => _selectMode('1A2B+')),
-            ListTile(title: const Text('1A2B3C'), onTap: () => _selectMode('1A2B3C')),
-            ListTile(title: const Text('16 進位'), onTap: () => _selectMode('16進位')),
-          ],
-        ),
-      ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 30),
-            decoration: BoxDecoration(
-              // color: Colors.indigo.withOpacity(0.1),
-              border: Border(bottom: BorderSide(color: Colors.indigo.withOpacity(0.2))),
+          // 頂部輸入框 (對應圖 3 的 0000)
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              _controller.text.padRight(_codeLength, '_'),
+              style: const TextStyle(fontSize: 40, letterSpacing: 8, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
             ),
-            child: Center(
-              child: Text(
-                _controller.text.padRight(_codeLength, '_'),
-                style: const TextStyle(
-                  fontSize: 42, 
-                  letterSpacing: 12, 
-                  fontWeight: FontWeight.bold,
-                  color: Colors.indigo,
-                  fontFamily: 'monospace', // 使用等寬字體讓底線對齊
-                ),
+          ),
+          // 中間紀錄區
+          Expanded(
+            child: ListView.separated(
+              itemCount: _history.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, i) => ListTile(
+                leading: Text("#${_history.length - i}"),
+                title: Text(_history[i], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
               ),
             ),
           ),
-          
-          Expanded(
-            child: _history.isEmpty 
-                ? const Center(child: Text("開始挑戰吧！", style: TextStyle(color: Colors.grey)))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: _history.length,
-                    itemBuilder: (context, index) => Card(
-                      elevation: 2,
-                      child: ListTile(
-                        leading: CircleAvatar(child: Text("${_history.length - index}")),
-                        title: Text(_history[index], style: const TextStyle(fontSize: 18)),
-                      ),
-                    ),
-                  ),
-          ),
-          _buildKeyboard(),
+          // 底部鍵盤 (對應圖 3 的數字圓圈)
+          _buildVisualKeyboard(),
         ],
       ),
     );
   }
+
+  Widget _buildVisualKeyboard() {
+  List<String> keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+  if (widget.mode == '16進位') keys.addAll(['A', 'B', 'C', 'D', 'E', 'F']);
+
+  return Container(
+    // 這裡可以維持底色，讓底色填滿到螢幕最邊緣
+    color: Colors.grey[50], 
+    child: SafeArea(
+      top: false, // 頂部不需要避讓，因為它在螢幕中間
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 15), // 增加底部內邊距
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // 確保只佔用必要高度
+          children: [
+            Wrap(
+              spacing: 12, runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: keys.map((k) {
+                bool isUsed = _controller.text.contains(k);
+                return GestureDetector(
+                  onTap: (isUsed || _isGameOver || _controller.text.length >= _codeLength) 
+                      ? null 
+                      : () => setState(() => _controller.text += k),
+                  child: Container(
+                    width: 55, height: 55,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isUsed ? Colors.grey[300] : Colors.white,
+                      border: Border.all(color: Colors.indigo, width: 1.5),
+                    ),
+                    child: Center(child: Text(k, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  onPressed: () => setState(() {
+                    if (_controller.text.isNotEmpty) {
+                      _controller.text = _controller.text.substring(0, _controller.text.length - 1);
+                    }
+                  }), 
+                  icon: const Icon(Icons.backspace_outlined, size: 30)
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
+                  onPressed: (_controller.text.length == _codeLength && !_isGameOver) ? _checkGuess : null,
+                  child: const Text("Send", style: TextStyle(fontSize: 18)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }
