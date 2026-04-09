@@ -80575,7 +80575,7 @@ wq(a){return this.adh(a)},
 adh(a){var s=0,r=A.S(t.H),q=1,p=[],o,n,m,l,k,j,i
 var $async$wq=A.T(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:q=3
-o=A.fT("http://35.229.255.125:8000/api/scores/update/")
+o=A.fT("https://1a2b-game.duckdns.org/api/scores/update/")
 l=t.N
 k=A.aq(["Content-Type","application/json"],l,l)
 s=6
@@ -80689,7 +80689,7 @@ A.r3.prototype={
 xR(){var s=0,r=A.S(t.j),q,p
 var $async$xR=A.T(function(a,b){if(a===1)return A.P(b,r)
 for(;;)switch(s){case 0:s=3
-return A.U(A.aLh(A.fT("http://35.229.255.125:8000/api/scores/")),$async$xR)
+return A.U(A.aLh(A.fT("https://1a2b-game.duckdns.org/api/scores/")),$async$xR)
 case 3:p=b
 if(p.b===200){q=B.d1.Sn(B.S.fj(p.w),null)
 s=1
