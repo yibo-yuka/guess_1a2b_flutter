@@ -367,7 +367,7 @@ class _GamePageState extends State<GamePage> {
   Future<void> _submitScore(String name) async {
     try {
       // 這裡換成你 GCP VM 的固定 IP 或網域名稱
-      final url = Uri.parse('http://35.229.255.125:8000/api/scores/update/'); 
+      final url = Uri.parse('https://1a2b-game.duckdns.org/api/scores/update/'); 
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -511,7 +511,7 @@ class LeaderboardPage extends StatelessWidget {
   const LeaderboardPage({super.key});
 
   Future<List<dynamic>> fetchLeaderboard() async {
-    final response = await http.get(Uri.parse('http://35.229.255.125:8000/api/scores/'));
+    final response = await http.get(Uri.parse('https://1a2b-game.duckdns.org/api/scores/')); 
     if (response.statusCode == 200) {
       return jsonDecode(utf8.decode(response.bodyBytes)); // 確保中文不亂碼
     }
