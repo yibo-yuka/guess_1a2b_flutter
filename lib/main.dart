@@ -553,7 +553,7 @@ class LeaderboardPage extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(child: Text("${index + 1}")),
                 title: Text(players[index]['username']),
-                trailing: Text("${players[index]['score']} 點", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                trailing: Text("${players[index]['score']} 題", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               );
             },
           );
