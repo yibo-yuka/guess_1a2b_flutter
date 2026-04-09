@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'dart:math';
+// import 'dart:math';
 
 void main() => runApp(const GuessGameApp());
 
@@ -526,8 +526,26 @@ class LeaderboardPage extends StatelessWidget {
         future: fetchLeaderboard(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text("錯誤: ${snapshot.error}"));
-          
+
+          if (snapshot.hasError) {
+            // 印出完整錯誤到 console
+            print("排行榜錯誤詳情: ${snapshot.error}");
+            print("StackTrace: ${snapshot.stackTrace}");
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  // 顯示完整錯誤在畫面上，方便 debug
+                  SelectableText(
+                    "錯誤: ${snapshot.error}",
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
           final players = snapshot.data ?? [];
           return ListView.builder(
             itemCount: players.length,
