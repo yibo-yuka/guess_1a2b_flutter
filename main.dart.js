@@ -80710,7 +80710,7 @@ return new A.xT(new A.LH(new A.a2H(r),s,!0,!0,!0,A.aLX(),q),q,B.az,!1,q,q,B.lx,!
 $S:499}
 A.a2H.prototype={
 $2(a,b){var s=null,r=this.a,q=J.bn(r)
-return A.atC(new A.GN(A.du(""+(b+1),s,s,s,s,s,s),s),A.du(J.kW(q.h(r,b),"username"),s,s,s,s,s,s),A.du(A.j(J.kW(q.h(r,b),"score"))+" \u9ede",s,s,s,B.yQ,s,s))},
+return A.atC(new A.GN(A.du(""+(b+1),s,s,s,s,s,s),s),A.du(J.kW(q.h(r,b),"username"),s,s,s,s,s,s),A.du(A.j(J.kW(q.h(r,b),"score"))+" \u984c",s,s,s,B.yQ,s,s))},
 $S:192}
 A.ano.prototype={
 $1(a){return a.acx("GET",this.a,this.b)},
